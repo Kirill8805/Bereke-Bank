@@ -31,7 +31,20 @@ type Profile = { id: string; email: string; full_name: string; photo_url: string
 type Session = { id: string; kind: string; score: number | null; summary: string | null; strengths: string[] | null; weaknesses: string[] | null; created_at: string; completed: boolean };
 
 function isTest(s: Session) { return s.kind === "products" || s.kind === "knowledge" || s.kind === "limits_knowledge" || s.kind === "collateral_knowledge"; }
-function isTrainer(s: Session) { return s.kind === "roleplay" || s.kind === "products_roleplay" || s.kind === "limits_roleplay" || s.kind === "collateral_roleplay"; }
+function isTrainer(s: Session) { return s.kind === "roleplay" || s.kind === "products_roleplay" || s.kind === "limits_roleplay" || s.kind === "collateral_roleplay" || s.kind === "voice_roleplay"; }
+
+// Человеческие названия тренажёров/тестов для истории
+const KIND_LABELS: Record<string, string> = {
+  roleplay: "Чат с ИИ",
+  products_roleplay: "Чат с клиентом по продуктам",
+  limits_roleplay: "Тренажёр: Лимиты",
+  collateral_roleplay: "Тренажёр: Залоги",
+  voice_roleplay: "Голосовой ИИ тренажёр по кредитам",
+  products: "Тест по продуктам",
+  knowledge: "Тест B-Bonus",
+  limits_knowledge: "Тест: Лимиты",
+  collateral_knowledge: "Тест: Залоги",
+};
 
 function avgScore(sessions: Session[]) {
   const scored = sessions.filter((s) => s.score != null);
@@ -148,8 +161,8 @@ function ProfilePage() {
       <Block title="Сильные стороны" icon={<ThumbsUp className="size-4" />} color="success" items={allStrengths} empty="Пройдите тренировку или тест, чтобы увидеть свои сильные стороны." />
       <Block title="Над чем поработать" icon={<AlertCircle className="size-4" />} color="destructive" items={allWeaknesses} empty="После первой тренировки или теста здесь появятся рекомендации." />
 
-      {trainers.length > 0 && <HistorySection title="История тренажёров" icon={<Sparkles className="size-4 text-primary" />} sessions={trainers} />}
-      {tests.length > 0 && <HistorySection title="История тестов" icon={<FileText className="size-4 text-primary" />} sessions={tests} />}
+      {trainers.length > 0 && <HistorySection title="История тренажёров" icon={<Sparkles className="size-4 text-primary" />} sessions={trainers} fallback="Тренажёр" />}
+      {tests.length > 0 && <HistorySection title="История тестов" icon={<FileText className="size-4 text-primary" />} sessions={tests} fallback="Тест" />}
 
 
       {isAdmin && (
@@ -192,7 +205,7 @@ function ProfilePage() {
   );
 }
 
-function HistorySection({ title, icon, sessions }: { title: string; icon: React.ReactNode; sessions: Session[] }) {
+function HistorySection({ title, icon, sessions, fallback }: { title: string; icon: React.ReactNode; sessions: Session[]; fallback: string }) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -205,8 +218,9 @@ function HistorySection({ title, icon, sessions }: { title: string; icon: React.
           <li key={s.id} className="bg-card border rounded-xl p-3 flex items-start gap-3">
             <div className="size-10 rounded-lg gradient-primary text-primary-foreground flex items-center justify-center font-bold text-xs">{s.score != null ? Number(s.score).toFixed(1) : "—"}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</p>
-              <p className="text-sm line-clamp-2 mt-0.5">{s.summary}</p>
+              <p className="text-sm font-semibold leading-tight">{KIND_LABELS[s.kind] ?? fallback}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{new Date(s.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</p>
+              <p className="text-sm line-clamp-2 mt-0.5 text-muted-foreground">{s.summary}</p>
             </div>
           </li>
         ))}
